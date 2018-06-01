@@ -28,11 +28,12 @@ main(){
 		cout << n << endl;
 		for(int i = 0; i < 2000; ++i){
 			genArr(A,n);
-			double B[n];
+			genArr(B,n);
+			double C[n];
 			//for(int j = 1; j <= n; ++j)
 			//	V.push_back(rand() % n);
 			time_i = clock();
-			MergeSort(A,B,n);
+			MergeSort(A,C,n);
 			time_f = clock();
 			t1 = static_cast<double>(time_f - time_i)/CLOCKS_PER_SEC;
 			time_i = clock();
