@@ -1,10 +1,12 @@
 #include <map>
 #include <vector>
 #include <fstream>
+#include <string>
 #include "redBlackTree.h"
 
 typedef char symbol;
-typedef int c_size;
+typedef unsigned int c_size;
+typedef std::string ustring;
 
 class State{
 public:
@@ -25,7 +27,7 @@ public:
       return it->second;
     return nullptr;
   }
-  static void Set_Transition(State *&s1, symbol &c, State *s2){ (*s1->States)[c] = s2; }
+  static void Set_Transition(State *&s1, const symbol &c, State *s2){ (*s1->States)[c] = s2; }
   static State* Copy_State(State *s){
     State* r = New_State();
     Set_Final(s, s->Final);
@@ -33,19 +35,14 @@ public:
       (*r->States)[it->first] = it->second;
     return r;
   }
-  static void Clear_State(State *s){
-    State::Set_Final(s,false);
-    for(symbol c = 'a'; c <= 'z'; ++c){
-      State::Set_Transition(s,c,nullptr);
-    }
-  }
+
 };
 
 class DFSA{
 public:
   typedef RedBlackTree<State*> dictionary;
   typedef std::vector<State*> Stack_State;
-
+  static ustring alphabet;
   dictionary* MinimalAutomatonStatesDictionary;
   State* InitialState;
 public:
@@ -73,39 +70,41 @@ public:
   State* FindMinimazed(State *s){
     State* node = Member(s);
     if(!node){
+      std::cout << "new ";
       node = State::Copy_State(s);
       Insert(node);
     }
     return node;
   }
   void Create_Minimal_FS_Automaton_for_given_list(std::string filename){
-    std::string CurrentWord, PreviousWord;
+    ustring CurrentWord, PreviousWord, trash;
     MinimalAutomatonStatesDictionary = new dictionary;
-    c_size MAX_WORD_SIZE = 0;
+    c_size MAX_WORD_SIZE = Find_Max_Word_Size(filename);
     std::ifstream file(filename);
-    file >> MAX_WORD_SIZE;
     State* TempStates[++MAX_WORD_SIZE];
     for (c_size i = 0; i < MAX_WORD_SIZE; ++i){
       TempStates[i] = State::New_State();
     }
     std::cout << std::endl;
-    State::Clear_State(TempStates[0]);
+    Clear_State(TempStates[0]);
     PreviousWord = "";
     c_size PrefixLenghtPlus, it;
     c_size LenghtPreviousWord, LenghtCurrentWord;
-    while(file >> CurrentWord){
+    while(file >> CurrentWord >> trash){
       it = 1;
       LenghtPreviousWord = PreviousWord.size();
       LenghtCurrentWord = CurrentWord.size();
       while(it < LenghtPreviousWord && it < LenghtCurrentWord && CurrentWord[it-1] == PreviousWord[it-1])
         ++it;
       PrefixLenghtPlus = it;
-      for(c_size i = LenghtPreviousWord; i >= PrefixLenghtPlus; --i)
+      for(c_size i = LenghtPreviousWord; i >= PrefixLenghtPlus; --i){
         State::Set_Transition(TempStates[i-1], PreviousWord[i-1], FindMinimazed(TempStates[i]));
-      for(c_size i = PrefixLenghtPlus; i <= LenghtCurrentWord; ++i){
-        State::Clear_State(TempStates[i]);
-        State::Set_Transition(TempStates[i-1], CurrentWord[i-1], TempStates[i]);
         std::cout << CurrentWord[i-1] << ' ';
+      }
+      for(c_size i = PrefixLenghtPlus; i <= LenghtCurrentWord; ++i){
+        Clear_State(TempStates[i]);
+        State::Set_Transition(TempStates[i-1], CurrentWord[i-1], TempStates[i]);
+
       }
       std::cout << std::endl;
       State::Set_Final(TempStates[LenghtCurrentWord], true);
@@ -149,4 +148,20 @@ private:
     if(!State::isFinal(S[sp])) return Find_Forward_Word(S,word,sp);
     else return true;
   }
+  void Clear_State(State *s){
+    State::Set_Final(s,false);
+    for(auto c = alphabet.begin(); c <= alphabet.end(); ++c){
+      State::Set_Transition(s,*c,nullptr);
+    }
+  }
+  size_t Find_Max_Word_Size(std::string filename){
+    std::string word,trash;
+    size_t MAX_WORD_SIZE = 0;
+    std::ifstream file(filename);
+    while(file>>word>>trash)
+      if(word.size() > MAX_WORD_SIZE)
+        MAX_WORD_SIZE = word.size();
+    return MAX_WORD_SIZE;
+  }
 };
+std::string DFSA::alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ`^´~";
