@@ -2,7 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include "dictionary.hpp"
+#include "dictionary.h"
 #include "redBlackTree.h"
 
 int Compare_States(State* s1, State* s2);
